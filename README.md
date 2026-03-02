@@ -7,6 +7,8 @@ bun i class-mixin-instance
 ## Example
 
 ```ts
+import { mixin } from "class-mixin-instance"
+
 class Person {
   name!: string
   age!: number
