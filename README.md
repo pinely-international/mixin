@@ -1,5 +1,13 @@
 # Class Mixin in TypeScript
 
+Mixins are the type of structure in software development that allows them be included in a more composition way rather than inheritance.
+The closest analogy is if `class User implements Person, Profile { }` would actually implement the properties and methods.
+
+As `implements` is a TypeScript feature, it doesn't exist in runtime, that's why this library relies on `extends` behavior.
+Though it still looks readable - `class User extends mixin(Person, Profile) { }`.
+
+## Install
+
 ```bash
 bun i class-mixin-instance
 ```
@@ -49,7 +57,7 @@ user instanceof mixin(Person, Profile) // === true
 - a mixin class can define public/protected/private visibility.
 - a mixin class can define a constructor.
 - a mixin class can't define constructor arguments.
-- mixin classes types must match each other, otherwise error will be shown at `mixin(Person, Profile)`.
+- mixin classes types must match each other, otherwise error will be shown at `extends mixin(Person, Profile)`.
 - a class that extends a mixin can be checked with `instanceof` for each class and altogether.
 
 ### Type per class
@@ -63,7 +71,7 @@ When inspecting `super`, your IDE will display the mixins.
 
 <img width="618" height="182" alt="image" src="https://github.com/user-attachments/assets/334b31fc-00e5-4fdd-b255-4fcd0390abbc" />
 
-## Decorator support
+## Decorators
 
 Decorators should work as intended.
 
