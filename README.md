@@ -47,10 +47,10 @@ user instanceof mixin(Person, Profile) // === true
 ### Type per class
 
 When inspecting a property from a mixin, your IDE will display what this type belongs to.
-<img width="612" height="194" alt="image" src="https://gist.github.com/user-attachments/assets/193d9220-8d37-4dc8-b730-6867b0b8ae2e" />
+<img width="612" height="194" alt="image" src="https://github.com/user-attachments/assets/b2b3a4bc-58ff-44fb-a4c7-6cf4433686ab" />
+
 
 ### Type `super`
 
 When inspecting `super`, your IDE will display the mixins.
-
-<img width="618" height="182" alt="image" src="https://gist.github.com/user-attachments/assets/0dce5b97-e3bd-47e5-bd85-77b997be0d05" />
+<img width="618" height="182" alt="image" src="https://github.com/user-attachments/assets/334b31fc-00e5-4fdd-b255-4fcd0390abbc" />
