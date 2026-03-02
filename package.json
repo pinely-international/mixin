@@ -1,0 +1,17 @@
+{
+  "name": "class-mixin-instance",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "bench": "bun run ./src/mixin.benchmark.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "mitata": "^1.0.34",
+    "reflect-metadata": "^0.2.2"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

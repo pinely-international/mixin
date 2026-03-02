@@ -1,0 +1,43 @@
+import { mixin, MixinSymbol } from "./mixin"
+
+class Person {
+  name!: string
+  age!: number
+
+  private gender!: "aircraft"
+}
+
+class Profile {
+  name!: string
+  avatar!: string
+
+  protected something!: {}
+}
+
+export class User extends mixin(Person, Profile) {
+  id!: number
+
+  asd() {
+    this.gender // => Error: Property is private
+    this.something
+  }
+}
+
+
+const user = new User
+user.gender // => Error: Property is private
+user.something // => Error: Property is protected
+
+user instanceof User // === true
+user instanceof Person // === true
+user instanceof Profile // === true
+user instanceof mixin(Person, Profile) // === true
+
+// repeated mixin invocation should still recognize the same instance
+const MAgain = mixin(Person, Profile);
+user instanceof MAgain // === true (metadata-based instanceof)
+
+  // internal metadata is stored on the base constructors
+  // (for debugging/inspection; not part of public API)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ; (Person as any)[MixinSymbol]?.mixed // array of mixed classes
