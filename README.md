@@ -75,6 +75,44 @@ When inspecting `super`, your IDE will display the mixins.
 
 <img width="618" height="182" alt="image" src="https://github.com/user-attachments/assets/334b31fc-00e5-4fdd-b255-4fcd0390abbc" />
 
+### Semantics
+
+To annotate a class that it is a Mixin, denoting that this class can be potentially used as mixin member, a `@mixin.member` decorator can be used on a Mixin Member.
+Though it doesn't restrict a class from being invocated as a regular class.
+
+```ts
+@mixin.member
+class Profile {}
+
+new Profile // No error.
+new mixin(Profile) // Works the same.
+```
+
+> [!TIP]
+> Using `@mixin.member` also provides better performance, this is due to JS limitations of defining `Symbol.hasInstance`. Using `@mixin.member` puts necessary static properties that otherwise is done on first `mixin(Member)` call, you're essentially partially initiating a class before it's used.
+
+```ts
+@mixin.member
+class Profile1 {}
+
+// No decorator
+class Profile2 {}
+
+mixin(Profile1) // Faster.
+mixin(Profile2)
+```
+
+> [!Note]
+> If you really want to tell that it should be used only as base class you can prefix it with `abstract`, which will allow TypeScript to display an error whenever it's used on its own.
+
+```ts
+@mixin.member
+abstract class Profile {}
+
+new Profile // TypeScript error.
+new mixin(Profile) // Works the same.
+```
+
 ## Decorators
 
 Decorators should work as intended.
@@ -105,7 +143,6 @@ preserved, the mixed prototype simply contains both pieces of metadata.
 
 ## Standalone Invocation
 
-
 `mixin(A, B, C)` can be invoked itself as a class, which would result in an object that shares `A`, `B`, `C` classes.
 
 ```ts
@@ -118,7 +155,8 @@ const mixed = new Mixed
 
 ## Notes on implementation
 
-- The mixin helper **generates a new class on first invocation** for the provided constructors and caches the result. Subsequent calls with the same sequence return the *same* class reference, so `instanceof` checks remain cheap and class identity is preserved.
+- `mixin` **generates a new class on the first invocation** for the provided constructors and caches the result. Subsequent calls with the same sequence return the **same** class reference, so `instanceof` checks against the same instance for same sequence of mixin classes.
+- Caching relies on `CompositeMap`, which uses BitWise Keys Composition, it's the fastest approach for `CompositeMap`, but the speed works up to 32 mixin variants. When 32 variants are exceeded, it starts using `BigInt`, which creates overhead.
 - When a mixed class is created, its prototype is constructed immediately by copying all properties (including symbol keys) from each base class. This ensures any metadata created by decorators lives on the mixed prototype as well.
 - Static members and other non‑prototype properties from each mixin are also copied to the resulting class. Fields declared outside the constructor are handled by instantiating each base and merging its own instance properties into `this`.
 
@@ -131,9 +169,37 @@ The performance is proportional to instantiating each mixin class on its own + M
 If class `A`, `B`, `C` Takes 30ns to initiate (10ns for each),
 Then `class extends mixin(A, B, C)` Takes 40ns to initiate (10ns for each mixin class + 10ns mixin itself).
 
+However, it can be as performant as invocating a regular non-mixin class,
+it heavily depends on amount of classes, properties/methods in classes and conditions
+(e.g. if `new mixin(A, B, C)` was already initiated before, it would be ~50x faster next time because of caching and JS Engine optimizations).
+
 ### Accessing properties/methods (e.g. `user.login()`)
 
 The performance is somewhat equal as if there is no `mixin`, deviation within the error limits.
+
+### `instanceof`
+
+To property talk about performance of `instanceof`, let's create a baseline for it:
+
+```ts
+class Base {}
+class Derived extends Base {}
+
+new Derived instanceof Base // <== This is a baseline.
+```
+
+Let's say `new Derived instanceof Base` in that plain JavaScript takes `0.02ms`.
+
+Then the measurements would for custom `mixin` behavior are:
+
+```ts
+class Mixed extends mixin(A, B, C) {}
+const mixed = new Mixed
+```
+
+- `mixed instanceof Mixed` takes `~0.40ms`.
+- `mixed instanceof C` takes `~0.15ms`.
+- `mixed instanceof mixin(A, B, C)` takes `~0.75ms`.
 
 ## Development
 

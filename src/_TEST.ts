@@ -1,5 +1,6 @@
-import { mixin, MixinSymbol } from "./mixin"
+import { mixin, MIXIN_METADATA } from "./mixin"
 
+@mixin.member
 class Person {
   name!: string
   age!: number
@@ -7,6 +8,7 @@ class Person {
   private gender!: "aircraft"
 }
 
+@mixin.member
 class Profile {
   name!: string
   avatar!: string
@@ -40,4 +42,4 @@ user instanceof MAgain // === true (metadata-based instanceof)
   // internal metadata is stored on the base constructors
   // (for debugging/inspection; not part of public API)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ; (Person as any)[MixinSymbol]?.mixed // array of mixed classes
+  ; (Person as any)[MIXIN_METADATA]?.mixed // array of mixed classes

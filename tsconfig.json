@@ -9,7 +9,10 @@
     "emitDecoratorMetadata": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "rootDir": "."
+    "rootDir": ".",
+    "types": [
+      "bun"
+    ]
   },
   "include": [
     "src/**/*.ts"

@@ -4,7 +4,7 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "bench": "bun run ./src/mixin.benchmark.ts"
+    "bench": "bun run ./src/mixin.benchmark.mitata.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test"
-import { mixin, MixinSymbol } from "./mixin"
+import { mixin, MIXIN_CLASS } from "./mixin"
 
 class Person {
   name!: string
@@ -18,7 +18,7 @@ class Profile {
 
 class Unrelated { }
 
-describe("mixin helper", () => {
+describe("mixin", () => {
   it("combines prototypes and allows instanceof checks", () => {
     class User extends mixin(Person, Profile) {
       id!: number
@@ -38,22 +38,10 @@ describe("mixin helper", () => {
   })
 
   it("does not match when extra classes are mixed", () => {
-    class User extends mixin(Person, Profile) {
-      id!: number
-    }
+    class User extends mixin(Person, Profile) { }
 
-    const user = new User()
-    const MixedSame = mixin(Person, Profile)
-    const MixedUn = mixin(Person, Profile, Unrelated)
-
-    // sanity checks (no output intended)
-    // console.log('MixedSame === MixedUn', MixedSame === MixedUn)
-    // console.log('protos equal', MixedSame.prototype === MixedUn.prototype)
-    // console.log('user instanceof MixedSame', user instanceof MixedSame)
-    // console.log('user instanceof MixedUn', user instanceof MixedUn)
-
-    expect(MixedSame).not.toBe(MixedUn)
-    expect(user).not.toBeInstanceOf(MixedUn)
+    expect(mixin(Person, Profile)).not.toBe(mixin(Person, Profile, Unrelated))
+    expect(new User).not.toBeInstanceOf(mixin(Person, Profile, Unrelated))
   })
 
   it("does not introduce any issues accessing mixin properties/methods", () => {
@@ -114,13 +102,11 @@ describe("mixin helper", () => {
   })
 
   it("stores metadata on base constructors", () => {
-    const M1 = mixin(Person)
-    const M2 = mixin(Profile)
+    const M1 = mixin(class { }, Person)
+    const M2 = mixin(class { }, Profile)
 
-    // inspect the arrays each should contain the returned class
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const meta1 = (Person as any)[MixinSymbol]?.mixed as any[]
-    const meta2 = (Profile as any)[MixinSymbol]?.mixed as any[]
+    const meta1 = (Person as any)[MIXIN_CLASS]?.mixed as any[]
+    const meta2 = (Profile as any)[MIXIN_CLASS]?.mixed as any[]
 
     expect(meta1).toContain(M1)
     expect(meta2).toContain(M2)
