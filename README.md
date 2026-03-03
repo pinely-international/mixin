@@ -1,6 +1,6 @@
 # Class Mixin in TypeScript
 
-Mixins are the type of structure in software development that allows them be included in a more composition way rather than inheritance.
+[Mixin](https://en.wikipedia.org/wiki/Mixin)s are the type of structure in software development that allows them be included in a more composition way rather than inheritance.
 The closest analogy is if `class User implements Person, Profile { }` would actually implement the properties and methods.
 
 As `implements` is a TypeScript feature, it doesn't exist in runtime, that's why this library relies on `extends` behavior.
