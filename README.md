@@ -1,5 +1,12 @@
 # Class Mixin in TypeScript
 
+<a href="https://www.npmjs.com/package/class-mixin-instance">
+  <img src="https://img.shields.io/npm/v/class-mixin-instance?color=007ec6" />
+  <img alt="npm package minimized gzipped size" src="https://badgen.net/bundlejs/minzip/class-mixin-instance">
+</a>
+<a href="http://commitizen.github.io/cz-cli/"><img src="https://img.shields.io/badge/commitizen-friendly-brightgreen.svg" alt="Commitizen friendly" /></a>
+
+
 [Mixin](https://en.wikipedia.org/wiki/Mixin)s are the type of structure in software development that allows them be included in a more composition way rather than inheritance.
 The closest analogy is if `class User implements Person, Profile { }` would actually implement the properties and methods.
 
