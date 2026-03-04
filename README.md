@@ -1,7 +1,5 @@
 # Class Mixin in TypeScript
 
-<img src="https://deno.bundlejs.com/badge?q=class-mixin-instance" />
-
 [Mixin](https://en.wikipedia.org/wiki/Mixin)s are the type of structure in software development that allows them be included in a more composition way rather than inheritance.
 The closest analogy is if `class User implements Person, Profile { }` would actually implement the properties and methods.
 
