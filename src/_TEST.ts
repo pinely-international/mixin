@@ -15,7 +15,7 @@ class Profile {
 
   protected something!: {}
 }
-
+// export class User extends mixin.of(RealSomething).with(Person, Profile) { }
 export class User extends mixin(Person, Profile) {
   id!: number
 

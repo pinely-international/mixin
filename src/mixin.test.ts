@@ -105,8 +105,8 @@ describe("mixin", () => {
     const M1 = mixin(class { }, Person)
     const M2 = mixin(class { }, Profile)
 
-    const meta1 = (Person as any)[MIXIN_CLASS]?.mixed as any[]
-    const meta2 = (Profile as any)[MIXIN_CLASS]?.mixed as any[]
+    const meta1 = (Person as any)[MIXIN_CLASS]?.baseIn as any[]
+    const meta2 = (Profile as any)[MIXIN_CLASS]?.baseIn as any[]
 
     expect(meta1).toContain(M1)
     expect(meta2).toContain(M2)
@@ -160,5 +160,20 @@ describe("mixin", () => {
 
     const unique = new Set(seen.values())
     expect(unique.size).toBe(seen.size)
+  })
+
+  it("allows instanceof recursively", () => {
+    class A { }
+    class B { }
+    class C extends mixin(A, B) { }
+    class D { }
+    class E extends mixin(D, C) { }
+
+    const e = new E
+    expect(e).toBeInstanceOf(A)
+    expect(e).toBeInstanceOf(B)
+    expect(e).toBeInstanceOf(C)
+    expect(e).toBeInstanceOf(D)
+    expect(e).toBeInstanceOf(E)
   })
 })

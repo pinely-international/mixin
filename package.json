@@ -32,6 +32,7 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "class-validator": "^0.15.1",
     "mitata": "^1.0.34",
     "reflect-metadata": "^0.2.2",
     "tsdown": "^0.20.3",

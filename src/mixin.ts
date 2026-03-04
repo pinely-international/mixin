@@ -5,10 +5,7 @@ type UnionToIntersection<U> =
   ? I
   : never
 
-
-
-
-type ABC = abstract new (...args: never[]) => unknown
+type ABC = abstract new () => unknown
 
 type Mixin<T extends ABC> = MixinConstructor<T>
 type MixinConstructor<T extends ABC> = new () => UnionToIntersection<InstanceType<T>>
@@ -18,7 +15,8 @@ export const MIXIN_CLASS: unique symbol = Symbol("mixin.class")
 const mixinCache = new CompositeMap<object[], object>()
 
 class MixinEmpty { }
-export function mixin<T extends (abstract new () => void)[]>(...constructors: T): Mixin<T[number]> {
+// export function mixin<T extends ABC[], Base extends abstract new (atLeastOne: any, ...args: never[]) => any>(base: Base, ...constructors: T): Mixin<T[number]>
+export function mixin<T extends ABC[]>(...constructors: T): Mixin<T[number]> {
   if (constructors.length === 0) return MixinEmpty as never
 
   const mixin = mixinCache.get(constructors)
@@ -50,9 +48,10 @@ export function mixin<T extends (abstract new () => void)[]>(...constructors: T)
       }
     }
 
-    // record the list of constructors on the mixed class itself
-    static [MIXIN_METADATA] = { bases: constructors.slice() }
+    static [MIXIN_METADATA]: MixinMetadata[typeof MIXIN_METADATA] = { extends: [] }
   }
+
+  Mixin[MIXIN_METADATA].extends.push(...constructors.flatMap(c => [...(c as any)[MIXIN_METADATA]?.extends ?? [], c]))
 
   mixinCache.set(constructors, Mixin)
 
@@ -68,15 +67,17 @@ export function mixin<T extends (abstract new () => void)[]>(...constructors: T)
 }
 
 export namespace mixin {
-  export function member<T extends new (...args: any[]) => any>(target: T): T {
+  export function member<T extends new (...args: []) => any>(target: T & Partial<MixinMember>): T {
+    if (MIXIN_CLASS in target) return target
+
     return class extends target {
-      static [MIXIN_CLASS] = { mixed: [] };
+      static [MIXIN_CLASS] = { baseIn: [] }
       static [Symbol.hasInstance](instance: any) {
         if (!(instance && typeof instance === "object")) {
           return super[Symbol.hasInstance].call(this, instance)
         }
 
-        return hasInstance(this, instance, target)
+        return hasInstance(instance, this)
       }
     }
   }
@@ -91,34 +92,72 @@ function defineProperty(o: any, p: PropertyKey, attributes: PropertyDescriptor &
   }
 }
 
+interface MixinMetadata {
+  [MIXIN_METADATA]: { extends: Function[] }
+}
 
-function hasInstance(me: any, instance: any, constructor: any) {
-  const myMeta: any = me[MIXIN_METADATA]
-  const isTestingMixed = myMeta && myMeta.bases
+interface MixinMember {
+  [MIXIN_CLASS]: { baseIn: Function[] }
+}
 
-  if (isTestingMixed) {
-    const myBases: any[] = myMeta.bases
-    for (const M of constructor[MIXIN_CLASS].mixed as any[]) {
-      if (M.prototype.isPrototypeOf(instance)) {
-        const theirMeta: any = (M as any)[MIXIN_METADATA]
-        const theirBases: any[] = theirMeta?.bases || []
-        if (
-          theirBases.length === myBases.length &&
-          theirBases.every((x, i) => x === myBases[i])
-        ) {
-          return true
+// export function hasInstance(instance: object, constructor: Function & Partial<MixinMetadata> & Partial<MixinMember>): boolean {
+//   if (instance.constructor === constructor) return true
+//   if (instance.constructor)
+//     // if (constructor[MIXIN_METADATA]?.extends.some(x => x instanceof instance.constructor)) return true
+
+//     // if (instance.constructor)
+//     // if (constructor[MIXIN_CLASS]?.baseIn) return true
+
+//     return false
+// }
+
+// walk an instance's prototype chain and aggregate all relevant constructors
+// including any mixin sets.  This is used both by Symbol.hasInstance overrides
+// and the exported `hasInstance` helper shown in the tests.
+export function hasInstance(instance: any, constructor: any): boolean {
+  if (!(instance && typeof instance === "object")) return false
+
+  const seen = new Set<any>()
+  let proto = Object.getPrototypeOf(instance)
+
+  while (proto) {
+    const ctor = proto.constructor
+    if (ctor && !seen.has(ctor)) {
+      seen.add(ctor)
+
+      // only consider metadata that lives directly on the constructor;
+      // subclasses inherit the same object, which would otherwise cause the
+      // mixin list to be treated as if every subclass mixed in the same set.
+      let meta: any
+      if (Object.prototype.hasOwnProperty.call(ctor, MIXIN_METADATA)) {
+        meta = ctor[MIXIN_METADATA]
+      }
+      if (meta && Array.isArray(meta.extends)) {
+        for (const c of meta.extends) {
+          seen.add(c)
         }
       }
     }
-  } else {
-    for (const M of constructor[MIXIN_CLASS].mixed) {
-      if (M.prototype.isPrototypeOf(instance)) return true
-    }
+    proto = Object.getPrototypeOf(proto)
   }
 
-  return false
+  return seen.has(constructor)
 }
 
+
+function copyReflectMetadata(target: any, source: any) {
+  if (typeof Reflect !== "object" || typeof Reflect.getMetadataKeys !== "function") {
+    return
+  }
+  for (const key of Reflect.getMetadataKeys(source)) {
+    try {
+      const value = Reflect.getMetadata(key, source)
+      Reflect.defineMetadata(key, value, target)
+    } catch {
+      // ignore any failures - some metadata keys may be read-only
+    }
+  }
+}
 
 function copyStaticMembers(Mixin: any, constructor: any) {
   for (const key of Object.getOwnPropertyNames(constructor)) {
@@ -137,6 +176,9 @@ function copyStaticMembers(Mixin: any, constructor: any) {
     const descriptor = Object.getOwnPropertyDescriptor(constructor, symbol)!
     defineProperty(Mixin, symbol, descriptor)
   }
+
+  // static metadata (decorators) should also be copied
+  copyReflectMetadata(Mixin, constructor)
 }
 
 function copyPrototypeMembers(Mixin: any, constructor: any) {
@@ -144,7 +186,7 @@ function copyPrototypeMembers(Mixin: any, constructor: any) {
   if (proto === Object.prototype) return
 
   for (const key of Object.getOwnPropertyNames(proto)) {
-    if (key === "constructor") return
+    if (key === "constructor") continue
     const descriptor = Object.getOwnPropertyDescriptor(proto, key)!
     // if target already has an array value and the new one is also an
     // array, merge them to avoid overwriting decorator metadata
@@ -175,26 +217,29 @@ function copyPrototypeMembers(Mixin: any, constructor: any) {
       Object.defineProperty(Mixin.prototype, symbol, descriptor)
     }
   }
+
+  // also copy any reflect metadata attached to the prototype
+  copyReflectMetadata(Mixin.prototype, proto)
 }
 
 function overrideInstanceOf(Mixin: any, constructor: any) {
   let meta: any = constructor[MIXIN_CLASS]
   if (!meta) {
-    meta = { mixed: [] }
+    meta = { baseIn: [] }
     Object.defineProperty(constructor, MIXIN_CLASS, { value: meta, configurable: true })
   }
 
-  if (meta.mixed.includes(Mixin)) return Mixin as never
-  meta.mixed.push(Mixin)
+  if (meta.baseIn.includes(Mixin)) return Mixin as never
+  meta.baseIn.push(Mixin)
 
-  const fallback = constructor[Symbol.hasInstance] ?? Function.prototype[Symbol.hasInstance]
+  const fallback = constructor[Symbol.hasInstance]
   defineProperty(constructor, Symbol.hasInstance, {
     value(this: any, instance: any) {
       if (!(instance && typeof instance === "object")) {
         return fallback.call(this, instance)
       }
 
-      return hasInstance(this, instance, constructor)
+      return hasInstance(instance, this)
     }
   })
 }
