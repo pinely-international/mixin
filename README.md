@@ -17,13 +17,20 @@ This library tries to achieve more native feeling, like `mixin` is actually a pa
 
 ## Libraries Comparison
 
-|Name              |`ts-mixer`      |`class-mixin-instance`|
+|Performance              |`ts-mixer`      |`class-mixin-instance`|
 |---------------------|----------------|---------------------|
-|Speed (ops/s)|~150,005|~23,291,632 (**~155x faster**)|
-|Static Properties    |✅               |✅         |
+|Bundle size (min+gzip)|1.5kb|1kb (**30% smaller**)|
+|Instaniating (ops/s)        |~150,005     |~23,291,632 (**~155x faster**)|
+|Has Instance (`instanceof`)|~296,134|~36,682,623 (**~124x faster**)|
+
+|Feature              |`ts-mixer`      |`class-mixin-instance`|
+|---------------------|----------------|---------------------|
+|Static Members    |✅               |✅         |
 |Protected Members    |✅                 |✅         |
+|Private Members (TS)    |✅                 |✅         |
+|Private Members (JS native `#`)    |❌                |✅         |
 |Decorator Inheritance|✅ |✅         |
-|`instanceof` Support |❌ via `hasMixin` |✅            |
+|`instanceof` Override |❌ via `hasMixin` |✅            |
 |Type Inference       |✅|✅              |
 |Constructor Params   |⚠️ Needs init fn|❌ prohibited by spec          |
 
@@ -95,7 +102,7 @@ When inspecting `super`, your IDE will display the mixins.
 
 ### Semantics
 
-To annotate a class that it is a Mixin, denoting that this class can be potentially used as mixin member, a `@mixin.member` decorator can be used on a Mixin Member.
+To annotate that a class should be used as a Mixin, a `@mixin.member` decorator can be used on a desired class.
 Though it doesn't restrict a class from being invocated as a regular class.
 
 ```ts
@@ -107,7 +114,7 @@ new mixin(Profile) // Works the same.
 ```
 
 > [!TIP]
-> Using `@mixin.member` also provides better performance, this is due to JS limitations of defining `Symbol.hasInstance`. Using `@mixin.member` puts necessary static properties that otherwise is done on first `mixin(Member)` call, you're essentially partially initiating a class before it's used.
+> Using `@mixin.member` also provides better performance, this is due to JS limitations of defining `Symbol.hasInstance`. Using `@mixin.member` puts necessary static properties that otherwise is done on first `mixin(Member)` call, you're essentially partially initiating a Mixin before it's used.
 
 ```ts
 @mixin.member
@@ -164,11 +171,12 @@ preserved, the mixed prototype simply contains both pieces of metadata.
 `mixin(A, B, C)` can be invoked itself as a class, which would result in an object that shares `A`, `B`, `C` classes.
 
 ```ts
-const mixed = new mixin(A, B, C)
+const abc = new mixin(A, B, C)
+
 // Or
 
-const Mixed = mixin(A, B, C)
-const mixed = new Mixed
+const ABC = mixin(A, B, C)
+const abc = new ABC
 ```
 
 ## Notes on implementation
