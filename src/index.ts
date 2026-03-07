@@ -1,1 +1,1 @@
-export { mixin } from "./mixin"
+export { default as mixin } from "./mixin"

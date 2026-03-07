@@ -1,5 +1,5 @@
-import { describe, it, expect } from "bun:test"
-import { mixin, MIXIN_CLASS } from "./mixin"
+import { describe, expect, it } from "bun:test"
+import mixin from "./mixin"
 
 class Person {
   name!: string
@@ -17,6 +17,9 @@ class Profile {
 }
 
 class Unrelated { }
+class Human {
+  constructor(readonly foo: bigint, private popa: string) { }
+}
 
 describe("mixin", () => {
   it("combines prototypes and allows instanceof checks", () => {
@@ -24,17 +27,17 @@ describe("mixin", () => {
       id!: number
     }
 
-    const user = new User()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // console.log('Profile metadata:', (Profile as any)[MixinSymbol])
+    const user = new User
+
     expect(user).toBeInstanceOf(User)
     expect(user).toBeInstanceOf(Person)
     expect(user).toBeInstanceOf(Profile)
+    expect(user).toBeInstanceOf(mixin(Person))
+    expect(user).toBeInstanceOf(mixin(Profile))
+    expect(user).toBeInstanceOf(mixin(Person, Profile))
 
-    // repeated invocation should return the same class (cached)
-    const MAgain = mixin(Person, Profile)
-    expect(MAgain).toBe(mixin(Person, Profile))
-    expect(user).toBeInstanceOf(MAgain)
+    expect(mixin(Person, Profile)).toBe(mixin(Person, Profile))
+    expect(user).toBeInstanceOf(mixin(Person, Profile))
   })
 
   it("does not match when extra classes are mixed", () => {
@@ -101,17 +104,6 @@ describe("mixin", () => {
     expect(Mixed2.prototype[SYM]).toContain("B-bar")
   })
 
-  it("stores metadata on base constructors", () => {
-    const M1 = mixin(class { }, Person)
-    const M2 = mixin(class { }, Profile)
-
-    const meta1 = (Person as any)[MIXIN_CLASS]?.baseIn as any[]
-    const meta2 = (Profile as any)[MIXIN_CLASS]?.baseIn as any[]
-
-    expect(meta1).toContain(M1)
-    expect(meta2).toContain(M2)
-  })
-
   it("executes all constructors when instantiating", () => {
     let ranPerson = false
     let ranProfile = false
@@ -175,5 +167,36 @@ describe("mixin", () => {
     expect(e).toBeInstanceOf(C)
     expect(e).toBeInstanceOf(D)
     expect(e).toBeInstanceOf(E)
+  })
+
+  it("allows standalone invocation", () => {
+    const Mixed = mixin(Person, Profile)
+    const personProfile = new mixin(Person, Profile)
+
+    personProfile.age = 100
+    personProfile.avatar = "link"
+    expect(personProfile).toHaveProperty("age", 100)
+    expect(personProfile).toHaveProperty("avatar", "link")
+
+    expect(Mixed).toBe(mixin(Person, Profile))
+    expect(new Mixed).toBeInstanceOf(mixin(Person, Profile))
+    expect(new mixin(Person, Profile)).toBeInstanceOf(mixin(Person, Profile))
+  })
+
+  it("allows extending regular classes with mixins", () => {
+    class User extends mixin.as(Human).with(Person, Profile) {
+      id!: number
+    }
+
+    const user = new User(100n, "jopa")
+    user.foo
+    user.age = 100
+    user.avatar = "link"
+
+    expect(user).toHaveProperty("foo", 100n)
+    expect(user).toHaveProperty("age", 100)
+    expect(user).toHaveProperty("avatar", "link")
+
+    expect(user).toBeInstanceOf(User)
   })
 })

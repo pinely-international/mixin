@@ -1,4 +1,4 @@
-import { mixin } from "./mixin"
+import mixin from "./mixin"
 
 @mixin.member
 class Person {

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'bun:test';
 import { forEachSettings } from '../util';
 
-import { mixin } from '../../mixin';
+import mixin from '../../mixin';
 
 describe('gh-issue #52', () => {
     forEachSettings(() => {

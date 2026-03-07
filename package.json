@@ -1,6 +1,6 @@
 {
-  "name": "class-mixin-instance",
-  "version": "0.3.0",
+  "name": "mixedin",
+  "version": "0.5.0",
   "description": "A lightweight TypeScript mixin feature with instanceof support and order-insensitive caching.",
   "keywords": [
     "mixin",
@@ -16,7 +16,8 @@
   "types": "build/index.d.ts",
   "type": "module",
   "files": [
-    "build"
+    "build",
+    "LICENSE"
   ],
   "sideEffects": false,
   "author": "FrameMuse",
@@ -32,14 +33,14 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "@types/sinon": "^21.0.0",
     "class-validator": "^0.15.1",
     "mitata": "^1.0.34",
     "reflect-metadata": "^0.2.2",
-    "tsdown": "^0.20.3",
+    "sinon": "^21.0.2",
+    "tsdown": "^0.21.0",
+    "typescript": "^5",
     "vite": "^7.3.1",
     "vite-plugin-externalize-deps": "^0.10.0"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
   }
 }

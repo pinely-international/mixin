@@ -1,4 +1,5 @@
-import { mixin } from "./mixin"
+import { bench } from "./bench.suite"
+import mixin from "./mixin"
 
 
 const SYM = Symbol("decor")
@@ -42,6 +43,12 @@ class Derived extends Base {
   method() { return this.test }
 }
 
+@mixin.member
+class OptimizedA { }
+@mixin.member
+class OptimizedB { }
+class Optimized extends mixin(OptimizedA, OptimizedB) { }
+
 
 
 console.time("First time mixin")
@@ -53,8 +60,8 @@ mixin(A, B, C)
 console.timeEnd("Second time mixin")
 
 
-time("mixin", () => mixin(A, B, C))
-time("Light", () => class Light { })
+bench("Create mixin", () => mixin(A, B, C))
+bench("Create class Light", () => class Light { })
 
 class Light { }
 
@@ -66,41 +73,56 @@ class DerivedMixed extends mixin(A, B, C) { }
 
 
 
+{
+  using _ = bench.group("basic")
 
-time("Mixed", () => new Mixed)
-time("DerivedMixed", () => new DerivedMixed)
-time("Derived", () => new Derived)
+  bench("Mixed", () => new Mixed)
+  bench("DerivedMixed", () => new DerivedMixed)
+  bench("Derived", () => new Derived)
+}
+
 
 const derived = new Derived
 const derivedMixed = new DerivedMixed
+const optimized = new Optimized
 
-time("derived instanceof Base", () => derived instanceof Base)
-time("derivedMixed instanceof Mixed", () => derivedMixed instanceof Mixed)
-time("derivedMixed instanceof C", () => derivedMixed instanceof C)
-time("derivedMixed instanceof mixin(A, B, C)", () => derivedMixed instanceof mixin(A, B, C))
+{
+  using _ = bench.group("instanceof")
 
+  class Plain { }
+  class Overridden { static [Symbol.hasInstance](instance: any) { return true } }
+  const object = {}
 
+  bench("instanceof (plain)", () => object instanceof Plain)
+  bench("instanceof (plain fallback)", () => Function.prototype[Symbol.hasInstance].call(object, Plain))
+  bench("instanceof (overridden)", () => object instanceof Overridden)
+}
 
-console.group("instanceof")
+{
+  using _ = bench.group("instanceof (overridden)")
 
-class Plain { }
-class Overridden { static [Symbol.hasInstance](instance: any) { return true } }
-const object = {}
+  bench(() => derived instanceof Base)
+  bench(() => derivedMixed instanceof Mixed)
+  bench(() => derivedMixed instanceof C)
+  bench(() => derivedMixed instanceof mixin(A, B, C))
+}
 
-time("instanceof (plain)", () => object instanceof Plain)
-time("instanceof (plain fallback)", () => Function.prototype[Symbol.hasInstance].call(object, Plain))
-time("instanceof (overridden)", () => object instanceof Overridden)
+{
+  using _ = bench.group("@mixin.member")
 
-console.groupEnd()
+  bench(() => new Mixed)
+  bench(() => new Optimized)
+  bench("Create mixin", () => mixin(A, B))
+  bench("Create mixin Optimized", () => mixin(OptimizedA, OptimizedB))
+  bench("check Derived instanceof Base", () => derived instanceof Base)
+  bench("check Mixed instanceof mixin", () => derivedMixed instanceof mixin(A, B))
+  bench("check Mixed instanceof mixin (Optimized)", () => optimized instanceof mixin(OptimizedA, OptimizedB))
+}
 
-function time(label: string, callback: () => void) {
-  label += ` (${1000}x)`
+{
+  using _ = bench.group("Newing")
 
-  // Warmup.
-  for (let i = 0; i < 1_000; i++) callback()
-
-  // Measure.
-  console.time(label)
-  for (let i = 0; i < 1_000; i++) callback()
-  console.timeEnd(label)
+  bench(() => new Derived)
+  bench(() => new Mixed)
+  bench(() => new mixin(A, B, C))
 }

@@ -4,7 +4,7 @@ export class CompositeMap<K extends object[], V> {
   private readonly objectValues = new Map<number | bigint, V>()
   private readonly objectIds = new Map<object, number>()
 
-  private idCounter = 1
+  private idCounter = 0
   private incrementIdCounter = () => this.idCounter++
 
   private hash(keys: K): number | bigint {

@@ -1,5 +1,5 @@
 import { barplot, bench, run } from "mitata"
-import { mixin } from "./mixin"
+import mixin from "./mixin"
 
 
 const SYM = Symbol("decor")
@@ -26,6 +26,13 @@ class C {
 }
 
 
+@mixin.member
+class OptimizedA { }
+@mixin.member
+class OptimizedB { }
+class Optimized extends mixin(OptimizedA, OptimizedB) { }
+
+
 class Base {
   @decorator test1 = 1
   method1() { return this.test1 }
@@ -49,15 +56,10 @@ class Mixed extends mixin(A, B, C) { }
 const MixedEmpty = mixin()
 const MixedLight = mixin(Light)
 
-const extInst = new Derived
-const mixInst = new Mixed
+const derived = new Derived
+const mixed = new Mixed
+const optimized = new Optimized
 
-
-function benchMany(name: string, fn: () => void) {
-  bench(name, () => {
-    for (let i = 0; i < 1_000; i++) fn()
-  })
-}
 
 barplot(() => {
   bench("instantiate a class", () => new Light())
@@ -68,8 +70,8 @@ barplot(() => {
 })
 
 barplot(() => {
-  bench("call method on extended instance", () => extInst.method1())
-  bench("call method on mixed instance", () => mixInst.method1())
+  bench("call method on extended instance", () => derived.method1())
+  bench("call method on mixed instance", () => mixed.method1())
 })
 
 barplot(() => {
@@ -78,15 +80,23 @@ barplot(() => {
 })
 
 barplot(() => {
-  bench("check Mixed instanceof C", () => Mixed instanceof C)
-  bench("check Mixed instanceof mixin", () => Mixed instanceof mixin(A, B, C))
-  bench("check Derived instanceof Base", () => Derived instanceof Base)
+  bench("check Mixed instanceof C", () => mixed instanceof C)
+  bench("check Mixed instanceof mixin", () => mixed instanceof mixin(A, B, C))
+  bench("check Derived instanceof Base", () => derived instanceof Base)
 })
 
 barplot(() => {
-  bench("check Mixed instanceof Mixed", () => Mixed instanceof Mixed)
-  bench("check Mixed instanceof C", () => Mixed instanceof C)
-  bench("check Mixed instanceof mixin", () => Mixed instanceof mixin(A, B, C))
+  bench("check Mixed instanceof Mixed", () => mixed instanceof Mixed)
+  bench("check Mixed instanceof C", () => mixed instanceof C)
+  bench("check Mixed instanceof mixin", () => mixed instanceof mixin(A, B, C))
+})
+
+barplot(() => {
+  bench("new Mixed", () => new Mixed)
+  bench("new Optimized", () => new Optimized)
+  bench("check Derived instanceof Base", () => derived instanceof Base)
+  bench("check Mixed instanceof mixin", () => mixed instanceof mixin(A, B))
+  bench("check Mixed instanceof mixin (Optimized)", () => optimized instanceof mixin(OptimizedA, OptimizedB))
 })
 
 barplot(() => {

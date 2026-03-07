@@ -1,49 +1,49 @@
-# Class Mixin in TypeScript
+# Class Mixin in TypeScript (Multiple Inheritance)
 
-<a href="https://www.npmjs.com/package/class-mixin-instance">
-  <img src="https://img.shields.io/npm/v/class-mixin-instance?color=007ec6" />
-  <img alt="npm package minimized gzipped size" src="https://badgen.net/bundlejs/minzip/class-mixin-instance">
+<a href="https://www.npmjs.com/package/mixedin">
+  <img src="https://img.shields.io/npm/v/mixedin?color=007ec6" />
+  <img alt="npm package minimized gzipped size" src="https://badgen.net/bundlejs/minzip/mixedin">
 </a>
 <a href="http://commitizen.github.io/cz-cli/"><img src="https://img.shields.io/badge/commitizen-friendly-brightgreen.svg" alt="Commitizen friendly" /></a>
-
 
 [Mixin](https://en.wikipedia.org/wiki/Mixin)s are the type of structure in software development that allows them be included in a more composition way rather than inheritance.
 The closest analogy is if `class User implements Person, Profile { }` would actually implement the properties and methods.
 
-As `implements` is a TypeScript feature, it doesn't exist in runtime, that's why this library relies on `extends` behavior.
-Though it still looks readable - `class User extends mixin(Person, Profile) { }`.
+Unfortunately `implements` is a TypeScript feature, it doesn't exist in runtime, that's why this library attempts to cover this gap with fast and simple `mixin`.
 
-This library tries to achieve more native feeling, like `mixin` is actually a part of JavaScript/TypeScript. This library includes only one method `mixin`, the rest is done via plain JavaScript.
+This library tries to be complaint with actual [Mixin Proposal for JavaScript](https://github.com/tc39/proposal-mixins) and tries to achieve more native feeling, like `mixin` is actually a part of JavaScript/TypeScript.
 
 ## Libraries Comparison
 
-|Performance              |`ts-mixer`      |`class-mixin-instance`|
+|Performance              |`ts-mixer`      |`mixedin`|
 |---------------------|----------------|---------------------|
-|Bundle size (min+gzip)|1.5kb|1kb (**30% smaller**)|
-|Instaniating (ops/s)        |~150,005     |~23,291,632 (**~155x faster**)|
-|Has Instance (`instanceof`)|~296,134|~36,682,623 (**~124x faster**)|
+|Bundle size (min+gzip)|1.5kb|1kb|
+|Instantiating (ops/s)        |~150,005     |~16,291,632 (**~106x faster**)|
+|`hasMixin`/`instanceof` (ops/s)|~296,134|~84,682,623 (**~285x faster**)|
 
-|Feature              |`ts-mixer`      |`class-mixin-instance`|
+|Feature              |`ts-mixer`      |`mixedin`|
 |---------------------|----------------|---------------------|
-|Static Members    |✅               |✅         |
-|Protected Members    |✅                 |✅         |
-|Private Members (TS)    |✅                 |✅         |
-|Private Members (JS native `#`)    |❌                |✅         |
-|Decorator Inheritance|✅ |✅         |
-|`instanceof` Override |❌ via `hasMixin` |✅            |
-|Type Inference       |✅|✅              |
-|Constructor Params   |⚠️ Needs init fn|❌ prohibited by spec          |
+|Static Members    |✅|✅|
+|Protected Members    |✅|✅|
+|Private Members (TS)    |✅|✅|
+|Private Members (JS native `#`)|❌|✅|
+|Generics|⚠️ with caveats|✅|
+|Decorator Inheritance|❌ via `@decorator(...)`|✅|
+|`instanceof` Override|❌ via `hasMixin`|✅|
+|Type Inference       |✅|✅|
+|Mixin with base class|❌|✅|
+|Constructor Params   |✅|⚠️ intentionally prohibited|
 
 ## Install
 
 ```bash
-bun i class-mixin-instance
+bun i mixedin
 ```
 
 ## Example
 
 ```ts
-import { mixin } from "class-mixin-instance"
+import mixin from "mixedin"
 
 class Person {
   name!: string
@@ -168,7 +168,7 @@ preserved, the mixed prototype simply contains both pieces of metadata.
 
 ## Standalone Invocation
 
-`mixin(A, B, C)` can be invoked itself as a class, which would result in an object that shares `A`, `B`, `C` classes.
+`mixin(A, B, C)` can be invoked like class, which would result in an object that shares `A`, `B`, `C` classes.
 
 ```ts
 const abc = new mixin(A, B, C)
@@ -177,6 +177,68 @@ const abc = new mixin(A, B, C)
 
 const ABC = mixin(A, B, C)
 const abc = new ABC
+```
+
+## Mixin Generics
+
+Generics are "Type Arguments" of your mixin classes, to define them you do `class A<T> { a: T }`
+and property `a` will be typed accordingly to what it is assigned during invocation like `new A<1>`.
+
+To provide such types to a mixin, you simply type the type as usually:
+
+```ts
+class A<T> { a!: T }
+class B<T> { b!: T }
+
+class C extends mixin(A<1>, B<string>) { }
+
+const c = new C
+c.a // => 1
+c.b // => string
+```
+
+## Extending class with constructor arguments
+
+Mixins are cool, but what if I want to normally extend a class and add mixins on top?
+It's possible, though it requires more visual *disturbance*:
+
+```ts
+class A { }
+class B { }
+
+class Base {
+  constructor(private foo: bigint, readonly bar: number) { }
+}
+
+class Beer extends mixin.as(Base).with(A, B) {
+  constructor() {
+    super(1n, 1) // A, B will not receive these arguments.
+  }
+}
+
+const beer = new Beer
+```
+
+> Why not just `class extends mixin(Base, A, B)`
+
+That's simply because it's less intuitive and harder to maintain the overrides.
+It's also not possible to invoke `mixin.as(Base).with(A, B)` just like `new mixin` since the whole point of having this is to give ability to extend class as usually but with mixins, which follows
+
+## Usage in Types
+
+To define what mixins you'd like to see in your interfaces, you simply type whatever classes you need:
+
+```ts
+class A { }
+class B { }
+class C { }
+
+function doSomeProcess(data: A & B & C) { }
+
+class Special extends mixin(A, B, C) { }
+
+doSomeProcess(new Special) // Works.
+doSomeProcess(new mixin(A, B, C)) // Works.
 ```
 
 ## Notes on implementation
@@ -188,6 +250,8 @@ const abc = new ABC
 - The act of overriding `instanceof` itself declines the performance by 5x, but it falls within acceptable performance for low-level operations (1ns ~ 50ns) and future engine optimizations may improve if significantly.
 
 ## Performance
+
+*All given numbers are relevant for `AMD Ryzen 5 5600H with Radeon Graphics` and `RAM 32GB DDR4 3200 MT/s`*
 
 ### Instantiating (e.g. `new User`)
 
@@ -215,7 +279,7 @@ class Derived extends Base {}
 new Derived instanceof Base // <== This is a baseline.
 ```
 
-Let's say `new Derived instanceof Base` in that plain JavaScript takes `0.02ms`.
+Let's say `new Derived instanceof Base` in that plain JavaScript takes `40ns`.
 
 Then the measurements would for custom `mixin` behavior are:
 
@@ -224,9 +288,9 @@ class Mixed extends mixin(A, B, C) {}
 const mixed = new Mixed
 ```
 
-- `mixed instanceof Mixed` takes `~0.40ms`.
-- `mixed instanceof C` takes `~0.15ms`.
-- `mixed instanceof mixin(A, B, C)` takes `~0.75ms`.
+- `mixed instanceof Mixed` takes `80ns`.
+- `mixed instanceof C` takes `70ns`.
+- `mixed instanceof mixin(A, B, C)` takes `160ns`.
 
 ## Development
 

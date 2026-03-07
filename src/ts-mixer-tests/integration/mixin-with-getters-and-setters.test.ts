@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'bun:test';
 import { forEachSettings } from '../util';
 
-import { mixin } from '../..';
+import mixin from '../../mixin';
 
 describe('Mixins with getters and setters', () => {
 	forEachSettings(() => {
