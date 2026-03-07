@@ -28,10 +28,11 @@ This library tries to be complaint with actual [Mixin Proposal for JavaScript](h
 |Private Members (TS)    |✅|✅|
 |Private Members (JS native `#`)|❌|✅|
 |Generics|⚠️ with caveats|✅|
+|Standalone invocation|❌|✅|
 |Decorator Inheritance|❌ via `@decorator(...)`|✅|
 |`instanceof` Override|❌ via `hasMixin`|✅|
 |Type Inference       |✅|✅|
-|Mixin with base class|❌|✅|
+|Mixin with base class|⚠️ via `@mix`|✅|
 |Constructor Params   |✅|⚠️ intentionally prohibited|
 
 ## Install
